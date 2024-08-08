@@ -74,6 +74,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	log.Printf("get lark request json: %s", larkPLJson)
 	httpc, err := http.NewRequest("POST", Lark_Webhook_Uri, bytes.NewBuffer(larkPLJson))
 	if err != nil {
 		log.Println("Error creating request:", err)
@@ -95,9 +96,10 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	// 读取响应
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "", http.StatusBadRequest)
 		log.Printf("lark webhook response error, status code: %v", resp.StatusCode)
+		http.Error(w, "", http.StatusBadRequest)
 	}
+	log.Println("send")
 
 	fmt.Fprintln(w, "webssh resp.")
 }
