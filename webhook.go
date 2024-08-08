@@ -34,7 +34,7 @@ type Alert struct {
 	Status   string            `json:"status"`
 	StartsAt string            `json:"startsAt"`
 	EndsAt   string            `json:"endsAt"`
-	Values   string            `json:"values"`
+	Values   map[string]string `json:"values"`
 	Labels   map[string]string `json:"labels"`
 	// Annotations map[string]string `json:"annotations"`
 }
@@ -44,12 +44,17 @@ func (alert *Alert) ConvertLarkContentText() string {
 	for k, v := range alert.Labels {
 		labels = append(labels, fmt.Sprintf("%s:\t%s", k, v))
 	}
-
+	values := []string{}
+	for k, v := range alert.Values {
+		values = append(values, fmt.Sprintf("%s=%s", k, v))
+	}
 	ret := fmt.Sprintf(`告警值:\t%s
 %s
 startsAt:\t%s
 endsAt:\t%s
-	`, alert.Values, strings.Join(labels, "\n"), alert.StartsAt, alert.EndsAt)
+	`, strings.Join(values, " "),
+		strings.Join(labels, "\n"),
+		alert.StartsAt, alert.EndsAt)
 	return ret
 }
 
