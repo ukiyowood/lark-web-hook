@@ -40,6 +40,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	// 读取请求体
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		log.Printf("read request body error, %+v", err)
 		http.Error(w, "Unable to read request body", http.StatusBadRequest)
 		return
 	}
@@ -49,6 +50,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	var payload *Payload
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
+		log.Printf("unmarshal payload error, %+v", err)
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
@@ -58,4 +60,9 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "Received: %+v\n", payload)
 
 	fmt.Fprintln(w, "webssh resp.")
+}
+
+type LarkPayLoad struct {
+	MsgType string `json:"msg_type"`
+	Content string `json:"content"`
 }
