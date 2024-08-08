@@ -1,18 +1,25 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var Lark_Webhook_Uri string
 
 func main() {
+	// 	v := "vvvv"
+	// 	a := fmt.Sprintf(`告警状态: %s
+	// 告警值: %s
+	// 备注: %s
+	// 	`, v, v, v)
+	// 	fmt.Println(a)
+	// 	return
 	Lark_Webhook_Uri = os.Getenv("LARK_WEBHOOK_URI")
 	if Lark_Webhook_Uri == "" {
 		panic("no uri found, set env: LARK_WEBHOOK_URI before start.")
@@ -24,13 +31,28 @@ func main() {
 }
 
 type Alert struct {
-	Status      string            `json:"status"`
-	StartsAt    string            `json:"startsAt"`
-	EndsAt      string            `json:"endsAt"`
-	Values      interface{}       `json:"values"`
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
+	Status   string            `json:"status"`
+	StartsAt string            `json:"startsAt"`
+	EndsAt   string            `json:"endsAt"`
+	Values   string            `json:"values"`
+	Labels   map[string]string `json:"labels"`
+	// Annotations map[string]string `json:"annotations"`
 }
+
+func (alert *Alert) ConvertLarkContentText() string {
+	labels := []string{}
+	for k, v := range alert.Labels {
+		labels = append(labels, fmt.Sprintf("%s:\t%s", k, v))
+	}
+
+	ret := fmt.Sprintf(`告警值:\t%s
+%s
+startsAt:\t%s
+endsAt:\t%s
+	`, alert.Values, strings.Join(labels, "\n"), alert.StartsAt, alert.EndsAt)
+	return ret
+}
+
 type Payload struct {
 	Receiver string  `json:"receiver"`
 	Status   string  `json:"status"`
@@ -38,6 +60,18 @@ type Payload struct {
 	Title    string  `json:"title"`
 	State    string  `json:"state"`
 	Message  string  `json:"message"`
+}
+
+func (pl *Payload) ConvertLarkContentText() string {
+
+	ret := []string{
+		fmt.Sprintf("告警状态:\t%s\n", pl.State),
+	}
+	for _, alert := range pl.Alerts {
+		ret = append(ret, alert.ConvertLarkContentText())
+	}
+
+	return strings.Join(ret, "\n")
 }
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
@@ -59,44 +93,41 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received: %+v\n", payload)
-	// 输出解析结果
-	// fmt.Fprintf(w, "Received: %+v\n", payload)
+	log.Printf("Received: %+v\n", payload.ConvertLarkContentText())
 
-	// 转发告警
-	var larkPayLoad = NewLarkPayLoad(payload.Message)
-	larkPLJson, err := json.Marshal(larkPayLoad)
-	if err != nil {
-		log.Println("Error marshaling JSON:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	log.Printf("get lark request json: %s", larkPLJson)
-	httpc, err := http.NewRequest("POST", Lark_Webhook_Uri, bytes.NewBuffer(larkPLJson))
-	if err != nil {
-		log.Println("Error creating request:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	// // 转发告警
+	// var larkPayLoad = NewLarkPayLoad(payload.Message)
+	// larkPLJson, err := json.Marshal(larkPayLoad)
+	// if err != nil {
+	// 	log.Println("Error marshaling JSON:", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+	// log.Printf("get lark request json: %s", larkPLJson)
+	// httpc, err := http.NewRequest("POST", Lark_Webhook_Uri, bytes.NewBuffer(larkPLJson))
+	// if err != nil {
+	// 	log.Println("Error creating request:", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
 
-	// 设置请求头
-	httpc.Header.Set("Content-Type", "application/json")
+	// // 设置请求头
+	// httpc.Header.Set("Content-Type", "application/json")
 
-	// 发送请求
-	client := &http.Client{}
-	resp, err := client.Do(httpc)
-	if err != nil {
-		log.Println("Error sending request:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer resp.Body.Close()
-	// 读取响应
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("lark webhook response error, status code: %v", resp.StatusCode)
-		http.Error(w, "", http.StatusBadRequest)
-	}
-	log.Println("send")
+	// // 发送请求
+	// client := &http.Client{}
+	// resp, err := client.Do(httpc)
+	// if err != nil {
+	// 	log.Println("Error sending request:", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+	// defer resp.Body.Close()
+	// // 读取响应
+	// if resp.StatusCode != http.StatusOK {
+	// 	log.Printf("lark webhook response error, status code: %v", resp.StatusCode)
+	// 	http.Error(w, "", http.StatusBadRequest)
+	// }
 
 	fmt.Fprintln(w, "webssh resp.")
 }
