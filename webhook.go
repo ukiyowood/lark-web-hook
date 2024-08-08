@@ -64,10 +64,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "Received: %+v\n", payload)
 
 	// 转发告警
-	var larkPayLoad = LarkPayLoad{
-		MsgType: "text",
-		Content: payload.Message,
-	}
+	var larkPayLoad = NewLarkPayLoad(payload.Message)
 	larkPLJson, err := json.Marshal(larkPayLoad)
 	if err != nil {
 		log.Println("Error marshaling JSON:", err)
@@ -104,7 +101,21 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "webssh resp.")
 }
 
+type LarkPayLoadTextContent struct {
+	Text string `json:"text"`
+}
+
 type LarkPayLoad struct {
-	MsgType string `json:"msg_type"`
-	Content string `json:"content"`
+	MsgType string                 `json:"msg_type"`
+	Content LarkPayLoadTextContent `json:"content"`
+}
+
+func NewLarkPayLoad(text string) *LarkPayLoad {
+	content := LarkPayLoadTextContent{
+		Text: text,
+	}
+	return &LarkPayLoad{
+		MsgType: "text",
+		Content: content,
+	}
 }
