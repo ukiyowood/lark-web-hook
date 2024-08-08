@@ -42,16 +42,20 @@ type Alert struct {
 func (alert *Alert) ConvertLarkContentText() string {
 	labels := []string{}
 	for k, v := range alert.Labels {
-		labels = append(labels, fmt.Sprintf("%s:\t%s", k, v))
+		if k == "alertname" {
+			labels = append([]string{fmt.Sprintf("%s: %s", k, v)}, labels...)
+		} else {
+			labels = append(labels, fmt.Sprintf("%s: %s", k, v))
+		}
 	}
 	values := []string{}
 	for k, v := range alert.Values {
 		values = append(values, fmt.Sprintf("%s=%s", k, fmt.Sprintf("%f", v)))
 	}
-	ret := fmt.Sprintf(`告警值:\t%s
+	ret := fmt.Sprintf(`values: %s
 %s
-startsAt:\t%s
-endsAt:\t%s
+startsAt: %s
+endsAt: %s
 	`, strings.Join(values, " "),
 		strings.Join(labels, "\n"),
 		alert.StartsAt, alert.EndsAt)
@@ -70,7 +74,7 @@ type Payload struct {
 func (pl *Payload) ConvertLarkContentText() string {
 
 	ret := []string{
-		fmt.Sprintf("告警状态:\t%s\n", pl.State),
+		fmt.Sprintf("告警状态: %s\n", pl.State),
 	}
 	for _, alert := range pl.Alerts {
 		ret = append(ret, alert.ConvertLarkContentText())
