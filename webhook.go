@@ -20,10 +20,12 @@ func main() {
 }
 
 type Alert struct {
-	Status   string        `json:"status"`
-	StartsAt string        `json:"startsAt"`
-	EndsAt   string        `json:"endsAt"`
-	Values   []interface{} `json:"values"`
+	Status      string            `json:"status"`
+	StartsAt    string            `json:"startsAt"`
+	EndsAt      string            `json:"endsAt"`
+	Values      []interface{}     `json:"values"`
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
 }
 type Payload struct {
 	Receiver string  `json:"receiver"`
@@ -44,7 +46,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// 解析 JSON 负载
-	var payload Payload
+	var payload *Payload
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
