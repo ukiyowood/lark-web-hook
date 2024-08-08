@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,7 +14,10 @@ var Lark_Webhook_Uri string
 
 func main() {
 	Lark_Webhook_Uri = os.Getenv("LARK_WEBHOOK_URI")
-
+	if Lark_Webhook_Uri == "" {
+		panic("no uri found, set env: LARK_WEBHOOK_URI before start.")
+	}
+	log.Printf("Lark_Webhook_Uri: %s", Lark_Webhook_Uri)
 	http.HandleFunc("/webhook", handleWebhook)
 
 	panic(http.ListenAndServe(":60000", nil))
@@ -58,6 +62,42 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received: %+v\n", payload)
 	// 输出解析结果
 	// fmt.Fprintf(w, "Received: %+v\n", payload)
+
+	// 转发告警
+	var larkPayLoad = LarkPayLoad{
+		MsgType: "text",
+		Content: payload.Message,
+	}
+	larkPLJson, err := json.Marshal(larkPayLoad)
+	if err != nil {
+		log.Println("Error marshaling JSON:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	httpc, err := http.NewRequest("POST", Lark_Webhook_Uri, bytes.NewBuffer(larkPLJson))
+	if err != nil {
+		log.Println("Error creating request:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 设置请求头
+	httpc.Header.Set("Content-Type", "application/json")
+
+	// 发送请求
+	client := &http.Client{}
+	resp, err := client.Do(httpc)
+	if err != nil {
+		log.Println("Error sending request:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer resp.Body.Close()
+	// 读取响应
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "", http.StatusBadRequest)
+		log.Printf("lark webhook response error, status code: %v", resp.StatusCode)
+	}
 
 	fmt.Fprintln(w, "webssh resp.")
 }
