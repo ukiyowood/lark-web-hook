@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,8 +22,10 @@ func main() {
 	// mongo.Connect()
 
 	// 设置一个 10 秒的连接超时上下文
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	ctx := context.TODO()
 
 	opt := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, opt)
