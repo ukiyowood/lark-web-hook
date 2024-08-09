@@ -36,5 +36,17 @@ func main() {
 
 	// 确保在程序退出时断开连接
 	defer client.Disconnect(ctx)
+
+	// 查询所有数据库信息
+	databases, err := client.ListDatabaseNames(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 打印所有数据库名称
+	fmt.Println("Databases:")
+	for _, dbName := range databases {
+		fmt.Println(" -", dbName)
+	}
 	fmt.Println("mongodb connected.")
 }
