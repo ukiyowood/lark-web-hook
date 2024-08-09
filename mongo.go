@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -19,17 +20,14 @@ func main() {
 	}
 	fmt.Println("mongo uri: ", uri)
 	// 创建一个新的客户端并连接到 MongoDB
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
-	if err != nil {
-		log.Fatal(err)
-	}
+	// mongo.Connect()
 
 	// 设置一个 10 秒的连接超时上下文
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 连接到 MongoDB
-	err = client.Connect(ctx)
+	opt := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(ctx, opt)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +36,7 @@ func main() {
 	defer client.Disconnect(ctx)
 
 	// 查询所有数据库信息
-	databases, err := client.ListDatabaseNames(ctx, nil)
+	databases, err := client.ListDatabaseNames(ctx, bson.D{{"empty", false}})
 	if err != nil {
 		log.Fatal(err)
 	}
