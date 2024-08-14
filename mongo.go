@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"os"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -27,7 +27,11 @@ func main() {
 
 	ctx := context.TODO()
 
-	opt := options.Client().ApplyURI(uri)
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	opt := options.Client().ApplyURI(uri).SetTLSConfig(tlsConfig)
 	client, err := mongo.Connect(ctx, opt)
 	if err != nil {
 		log.Fatal(err)
@@ -36,15 +40,16 @@ func main() {
 	// 确保在程序退出时断开连接
 	defer client.Disconnect(ctx)
 
-	// 查询所有数据库信息
-	databases, err := client.ListDatabaseNames(ctx, bson.D{{"empty", false}})
+	db := client.Database("chainmonitor")
+
+	collections, err := db.ListCollectionNames(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// 打印所有数据库名称
-	fmt.Println("Databases:")
-	for _, dbName := range databases {
+	fmt.Println("Collections:")
+	for _, dbName := range collections {
 		fmt.Println(" -", dbName)
 	}
 	fmt.Println("mongodb connected.")
