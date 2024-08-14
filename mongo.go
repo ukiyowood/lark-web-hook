@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -42,7 +43,7 @@ func main() {
 
 	db := client.Database("chainmonitor")
 
-	collections, err := db.ListCollectionNames(ctx, nil)
+	collections, err := db.ListCollectionNames(ctx, bson.D{}, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
